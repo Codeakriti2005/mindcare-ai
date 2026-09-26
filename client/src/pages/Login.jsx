@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 function Login() {
   const navigate = useNavigate();
 
@@ -34,19 +37,16 @@ function Login() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
 
       const data = await response.json();
 
@@ -55,15 +55,15 @@ function Login() {
         return;
       }
 
-      // Clear any previous session
-localStorage.removeItem("token");
-localStorage.removeItem("user");
+      // Clear previous session
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-// Save fresh JWT token
-localStorage.setItem("token", data.token);
+      // Save fresh JWT token
+      localStorage.setItem("token", data.token);
 
-// Save fresh user information
-localStorage.setItem("user", JSON.stringify(data.user));
+      // Save fresh user information
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       // Redirect to dashboard
       navigate("/dashboard");
@@ -80,7 +80,6 @@ localStorage.setItem("user", JSON.stringify(data.user));
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6 py-12">
-
       <div className="w-full max-w-md">
 
         {/* Logo */}
@@ -100,7 +99,6 @@ localStorage.setItem("user", JSON.stringify(data.user));
 
         {/* Login Card */}
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-
           <form onSubmit={handleSubmit} className="space-y-5">
 
             {/* Email */}
@@ -128,11 +126,11 @@ localStorage.setItem("user", JSON.stringify(data.user));
                 </label>
 
                 <Link
-  to="/forgot-password"
-  className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
->
-  Forgot password?
-</Link>
+                  to="/forgot-password"
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               <input
@@ -161,7 +159,6 @@ localStorage.setItem("user", JSON.stringify(data.user));
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
-
           </form>
 
           {/* Register */}
@@ -174,7 +171,6 @@ localStorage.setItem("user", JSON.stringify(data.user));
               Create one
             </Link>
           </p>
-
         </div>
 
         {/* Back */}
@@ -188,7 +184,6 @@ localStorage.setItem("user", JSON.stringify(data.user));
         </div>
 
       </div>
-
     </div>
   );
 }
