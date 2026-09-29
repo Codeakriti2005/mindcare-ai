@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const moods = [
   {
     value: "very-happy",
@@ -256,7 +259,7 @@ for (let i = 0; i < uniqueMoodDates.length; i++) {
   const fetchMoodHistory = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/moods",
+        `${API_BASE_URL}/moods`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -295,7 +298,7 @@ for (let i = 0; i < uniqueMoodDates.length; i++) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/moods",
+        `${API_BASE_URL}/moods`,
         {
           method: "POST",
 
@@ -343,7 +346,7 @@ const handleDeleteMood = async (id) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/moods/${id}`,
+      `${API_BASE_URL}/moods/${id}`,
       {
         method: "DELETE",
         headers: {
