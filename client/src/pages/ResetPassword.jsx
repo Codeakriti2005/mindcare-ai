@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { apiRequest } from "../utils/api";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -29,14 +30,15 @@ function ResetPassword() {
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
-if (!passwordRegex.test(newPassword)) {
-  setError(
-    "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number."
-  );
-  return;
-}
+    if (!passwordRegex.test(newPassword)) {
+      setError(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number."
+      );
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match.");
@@ -46,24 +48,15 @@ if (!passwordRegex.test(newPassword)) {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: token.trim(),
-            newPassword,
-          }),
-        }
-      );
+      const data = await apiRequest("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          token: token.trim(),
+          newPassword,
+        }),
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "Unable to reset password.");
+      if (!data) {
         return;
       }
 
@@ -78,7 +71,8 @@ if (!passwordRegex.test(newPassword)) {
       console.error("Reset password error:", error);
 
       setError(
-        "Unable to connect to the server. Please try again."
+        error.message ||
+          "Unable to connect to the server. Please try again."
       );
     } finally {
       setLoading(false);

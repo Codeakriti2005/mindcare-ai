@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { apiRequest } from "../utils/api";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -21,23 +22,14 @@ function ForgotPassword() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-          }),
-        }
-      );
+      const data = await apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim(),
+        }),
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "Unable to process request.");
+      if (!data) {
         return;
       }
 
@@ -46,7 +38,8 @@ function ForgotPassword() {
       console.error("Forgot password error:", error);
 
       setError(
-        "Unable to connect to the server. Please try again."
+        error.message ||
+          "Unable to connect to the server. Please try again."
       );
     } finally {
       setLoading(false);

@@ -17,10 +17,20 @@ const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
-// ===============================
-// Rate Limiting
-// ===============================
+/*
+|--------------------------------------------------------------------------
+| Trust Render / Reverse Proxy
+|--------------------------------------------------------------------------
+| Render sits behind a reverse proxy and forwards the original client IP
+| through X-Forwarded-For. Express needs to trust the first proxy.
+*/
+app.set("trust proxy", 1);
 
+/*
+|--------------------------------------------------------------------------
+| Rate Limiting
+|--------------------------------------------------------------------------
+*/
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -31,10 +41,11 @@ const apiLimiter = rateLimit({
   },
 });
 
-// ===============================
-// Security Middleware
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| Security Middleware
+|--------------------------------------------------------------------------
+*/
 app.use(helmet());
 
 app.use(
@@ -46,12 +57,18 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 
+/*
+|--------------------------------------------------------------------------
+| API Rate Limiter
+|--------------------------------------------------------------------------
+*/
 app.use("/api", apiLimiter);
 
-// ===============================
-// API Routes
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 app.use("/api/auth", authRoutes);
 app.use("/api/moods", moodRoutes);
 app.use("/api/journals", journalRoutes);
@@ -61,15 +78,15 @@ app.use("/api/insights", insightRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 
-// ===============================
-// MongoDB Connection
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| MongoDB Connection
+|--------------------------------------------------------------------------
+*/
 mongoose
   .connect(process.env.MONGO_URI, {
     dbName: "mindcare_ai",
-    serverSelectionTimeoutMS: 10000,
-    tls: true,
+    serverSelectionTimeoutMS: 5000,
   })
   .then(() => {
     console.log("MongoDB connected successfully ✅");
@@ -79,20 +96,22 @@ mongoose
     console.error(error.message);
   });
 
-// ===============================
-// Test Route
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| Health Check
+|--------------------------------------------------------------------------
+*/
 app.get("/", (req, res) => {
   res.json({
     message: "MindCare AI backend is running 🧠",
   });
 });
 
-// ===============================
-// Global Error Handler
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| Global Error Handler
+|--------------------------------------------------------------------------
+*/
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.message);
 
@@ -101,10 +120,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ===============================
-// Start Server
-// ===============================
-
+/*
+|--------------------------------------------------------------------------
+| Start Server
+|--------------------------------------------------------------------------
+*/
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
