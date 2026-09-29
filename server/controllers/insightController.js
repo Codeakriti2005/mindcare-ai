@@ -5,6 +5,87 @@ const ollama = new Ollama({
   host: "http://127.0.0.1:11434",
 });
 
+const CLOUDFLARE_MODEL = "@cf/meta/llama-3.2-3b-instruct";
+
+const isProductionAI = () => {
+  return Boolean(
+    process.env.CLOUDFLARE_ACCOUNT_ID &&
+      process.env.CLOUDFLARE_API_TOKEN
+  );
+};
+
+const generateWithOllama = async (prompt) => {
+  console.log("Wellness AI Provider: Local Ollama");
+
+  const response = await ollama.chat({
+    model: "llama3.2:3b",
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+
+  return response.message?.content?.trim();
+};
+
+const generateWithCloudflare = async (prompt) => {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (!accountId || !apiToken) {
+    throw new Error("Cloudflare AI credentials are missing.");
+  }
+
+  console.log("Wellness AI Provider: Cloudflare Workers AI");
+
+  const url =
+    `https://api.cloudflare.com/client/v4/accounts/` +
+    `${accountId}/ai/run/${CLOUDFLARE_MODEL}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 300,
+      temperature: 0.5,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error(
+      "Cloudflare Wellness AI Error:",
+      JSON.stringify(data.errors || data)
+    );
+
+    throw new Error(
+      `Cloudflare Wellness AI request failed with status ${response.status}`
+    );
+  }
+
+  return data.result?.response?.trim();
+};
+
+const generateWellnessInsight = async (prompt) => {
+  if (isProductionAI()) {
+    return generateWithCloudflare(prompt);
+  }
+
+  return generateWithOllama(prompt);
+};
+
 const getWellnessInsights = async (req, res) => {
   try {
     const moods = await Mood.find({
@@ -48,17 +129,7 @@ Rules:
 - Return plain text only.
 `;
 
-    const response = await ollama.chat({
-      model: "llama3.2:3b",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-
-    const insight = response.message?.content?.trim();
+    const insight = await generateWellnessInsight(prompt);
 
     res.status(200).json({
       insight:
